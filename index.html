@@ -1,83 +1,418 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Next B3A</title>
+<meta name="theme-color" content="#0a2540">
+<meta name="description" content="B3A 城巴即時班次 · Next B3A real-time bus arrivals">
+<title>B3A 即時班次 · Next B3A</title>
 <style>
-  body { font-family: system-ui, "Segoe UI", "Microsoft JhengHei", sans-serif; margin: 0;
-         background: #f4f6f8; color: #1f2933; }
-  header { background: #c00000; color: #fff; padding: 16px 24px; }
-  header h1 { margin: 0; font-size: 28px; }
-  header p { margin: 4px 0 0; opacity: .9; }
-  main { display: flex; flex-wrap: wrap; gap: 20px; padding: 24px; }
-  section { flex: 1 1 320px; background: #fff; border-radius: 12px; padding: 18px 22px;
-            box-shadow: 0 1px 4px rgba(0,0,0,.12); }
-  h2 { margin: 0 0 4px; font-size: 20px; color: #1f4e79; }
-  .stop { color: #6b7280; margin: 0 0 14px; }
-  .bus { display: flex; justify-content: space-between; align-items: baseline;
-         border-top: 1px solid #e5e7eb; padding: 10px 0; }
-  .min { font-size: 34px; font-weight: 700; color: #c00000; }
-  .clock { color: #6b7280; }
-  .none { color: #6b7280; padding: 10px 0; }
-  footer { padding: 0 24px 24px; color: #6b7280; font-size: 14px; }
+  :root{
+    --navy-950:#061627; --navy-900:#0a2540; --navy-800:#0f3157; --navy-700:#17456f;
+    --ink:#0d1b2a; --muted:#5f7288; --line:rgba(13,27,42,.09);
+    --bg:#eef3f9; --card:#fff;
+    --red:#e5484d; --amber:#f79009; --green:#12b76a; --blue:#1570ef;
+    --radius-lg:22px; --radius-md:13px;
+    --shadow-sm:0 1px 2px rgba(10,37,64,.06), 0 6px 16px rgba(10,37,64,.06);
+    --shadow-lg:0 22px 44px -20px rgba(10,37,64,.38);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI","PingFang HK","PingFang TC","Microsoft JhengHei",sans-serif;
+    color:var(--ink); background:var(--bg);
+    min-height:100vh; line-height:1.45;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(900px 420px at 10% -8%, rgba(21,112,239,.16), transparent 62%),
+      radial-gradient(720px 400px at 92% -4%, rgba(18,183,106,.13), transparent 58%);
+  }
+
+  /* ---------- header ---------- */
+  .hero{
+    background:linear-gradient(135deg,var(--navy-950) 0%,var(--navy-800) 52%,var(--navy-700) 100%);
+    color:#fff;
+    padding:22px clamp(16px,4vw,40px) 26px;
+    border-radius:0 0 28px 28px;
+    box-shadow:0 20px 44px -24px rgba(6,22,39,.9);
+  }
+  .hero-inner{
+    max-width:1120px; margin:0 auto;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:18px 24px; flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:14px; min-width:0}
+  .brand-badge{
+    width:54px; height:54px; flex:none; border-radius:17px;
+    display:grid; place-items:center;
+    background:linear-gradient(160deg,#c62828,#8d1015);
+    box-shadow:0 10px 24px -10px rgba(198,40,40,.95), inset 0 1px 0 rgba(255,255,255,.22);
+  }
+  .brand-badge svg{width:29px; height:29px; fill:none; stroke:#fff; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round}
+  h1{margin:0; font-size:clamp(1.45rem,3.6vw,1.95rem); letter-spacing:.4px; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .pill{
+    font-size:.66rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2);
+    color:#e6f0fa; padding:4px 9px; border-radius:999px; white-space:nowrap;
+  }
+  .route-meta{margin:4px 0 0; font-size:.84rem; color:#c4d6e9; font-weight:500}
+  .hero-actions{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .live{
+    display:inline-flex; align-items:center; gap:7px;
+    background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.17);
+    padding:8px 13px; border-radius:999px; font-size:.77rem; color:#dbe8f5; white-space:nowrap;
+  }
+  .live .dot{
+    width:7px; height:7px; border-radius:50%; background:var(--green);
+    box-shadow:0 0 0 0 rgba(18,183,106,.6); animation:pulse 2.4s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(18,183,106,.55)}
+    70%{box-shadow:0 0 0 9px rgba(18,183,106,0)}
+    100%{box-shadow:0 0 0 0 rgba(18,183,106,0)}
+  }
+  .btn-refresh{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    background:#fff; color:var(--navy-900); border:0;
+    padding:10px 17px; border-radius:999px;
+    font:inherit; font-size:.84rem; font-weight:650; cursor:pointer; white-space:nowrap;
+    box-shadow:0 10px 22px -12px rgba(255,255,255,.95);
+    transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+  }
+  .btn-refresh:hover{background:#f4f9ff; transform:translateY(-1px); box-shadow:0 14px 26px -12px rgba(255,255,255,.95)}
+  .btn-refresh:active{transform:translateY(0) scale(.98)}
+  .btn-refresh:focus-visible{outline:3px solid #7fb3ff; outline-offset:2px}
+  .btn-refresh[disabled]{cursor:progress; opacity:.8}
+  .btn-refresh svg{width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
+  .btn-refresh.busy svg{animation:spin .9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ---------- layout ---------- */
+  main{
+    max-width:1120px; margin:0 auto;
+    padding:clamp(18px,3vw,30px) clamp(16px,4vw,40px) 6px;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+    gap:18px; align-items:start;
+  }
+
+  /* ---------- cards ---------- */
+  .card{
+    position:relative; overflow:hidden;
+    background:var(--card); border:1px solid var(--line);
+    border-radius:var(--radius-lg); padding:20px 22px 18px;
+    box-shadow:var(--shadow-sm);
+    transition:transform .26s ease, box-shadow .26s ease;
+  }
+  .card:hover{transform:translateY(-3px); box-shadow:var(--shadow-lg)}
+  .card::before{
+    content:""; position:absolute; inset:0 0 auto 0; height:4px;
+    background:linear-gradient(90deg,var(--blue),#5aa9ff);
+  }
+  .card[data-dir="I"]::before{background:linear-gradient(90deg,var(--green),#5fdca4)}
+  .card-head{display:flex; gap:12px; align-items:flex-start}
+  .dir-icon{
+    width:41px; height:41px; flex:none; border-radius:12px; display:grid; place-items:center;
+    background:#edf4ff; color:var(--blue);
+  }
+  .card[data-dir="I"] .dir-icon{background:#e9f9f0; color:#0f9d58}
+  .dir-icon svg{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round}
+  h2{margin:0; font-size:1.01rem; line-height:1.35; letter-spacing:.2px}
+  h2 .en{display:block; margin-top:2px; font-size:.77rem; font-weight:500; color:var(--muted); letter-spacing:0}
+  .stop{
+    margin:9px 0 0; display:flex; align-items:center; gap:6px;
+    font-size:.81rem; color:var(--muted);
+  }
+  .stop svg{width:14px; height:14px; flex:none; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
+
+  /* ---------- next arrival ---------- */
+  .board{margin-top:16px}
+  .next-label{
+    font-size:.68rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--muted);
+  }
+  .next{display:flex; align-items:flex-end; gap:11px; margin-top:6px; flex-wrap:wrap}
+  .next-num{
+    font-size:clamp(3.1rem,9vw,4.3rem); line-height:.94; font-weight:800;
+    letter-spacing:-.035em; font-variant-numeric:tabular-nums;
+    transition:color .3s ease;
+  }
+  .next-num.is-text{font-size:clamp(1.75rem,5.4vw,2.3rem); letter-spacing:.01em; font-weight:750}
+  .next-unit{font-size:.92rem; font-weight:650; color:var(--muted); padding-bottom:.5rem}
+  .next-time{
+    margin-left:auto; text-align:right; padding-bottom:.45rem;
+    font-size:.76rem; color:var(--muted);
+  }
+  .next-time strong{
+    display:block; font-size:1.02rem; color:var(--ink);
+    font-variant-numeric:tabular-nums; font-weight:700;
+  }
+  .tone-arriving{color:var(--green)}
+  .tone-urgent{color:var(--red)}
+  .tone-soon{color:var(--amber)}
+  .tone-ok{color:var(--blue)}
+
+  /* ---------- later arrivals ---------- */
+  .later{
+    list-style:none; margin:16px 0 0; padding:13px 0 0;
+    border-top:1px dashed var(--line);
+    display:flex; flex-direction:column; gap:9px;
+  }
+  .later li{display:flex; align-items:center; gap:10px; min-width:0; font-size:.84rem}
+  .tag{
+    flex:none; font-size:.75rem; font-weight:700; padding:3px 10px; border-radius:999px;
+    background:#eef2f7; color:#475569; font-variant-numeric:tabular-nums;
+  }
+  .tag.tone-arriving{background:#e7f8ef; color:#0a7a48}
+  .tag.tone-urgent{background:#fdeaea; color:#bf2026}
+  .tag.tone-soon{background:#fff3e0; color:#a35a00}
+  .tag.tone-ok{background:#eaf1fe; color:#0f5cc0}
+  .rmk{
+    min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    color:var(--muted);
+  }
+  .at{margin-left:auto; flex:none; color:var(--muted); font-variant-numeric:tabular-nums; font-weight:600}
+  .later-empty{margin:14px 0 0; padding-top:13px; border-top:1px dashed var(--line); font-size:.82rem; color:var(--muted)}
+
+  /* ---------- states ---------- */
+  .state{display:flex; align-items:center; gap:11px; padding:22px 0 18px; color:var(--muted)}
+  .state svg{width:22px; height:22px; flex:none; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+  .state .lines{font-size:.88rem; line-height:1.4}
+  .state .lines small{display:block; font-size:.76rem; opacity:.85}
+  .state.is-error{color:var(--red)}
+
+  .skel{display:flex; flex-direction:column; gap:10px; padding:8px 0 4px}
+  .skel span{
+    display:block; height:13px; border-radius:7px;
+    background:linear-gradient(90deg,#eef3f9 0%,#e2eaf3 40%,#eef3f9 80%);
+    background-size:220% 100%; animation:shimmer 1.35s infinite linear;
+  }
+  .skel span:nth-child(1){height:46px; width:58%; border-radius:12px}
+  .skel span:nth-child(2){width:34%}
+  .skel span:nth-child(3){width:82%}
+  @keyframes shimmer{to{background-position:-220% 0}}
+
+  /* ---------- legend + footer ---------- */
+  .legend{
+    max-width:1120px; margin:0 auto;
+    padding:2px clamp(16px,4vw,40px) 0;
+    display:flex; flex-wrap:wrap; gap:8px 16px;
+    font-size:.74rem; color:var(--muted);
+  }
+  .legend span{display:inline-flex; align-items:center; gap:6px}
+  .legend i{width:9px; height:9px; border-radius:3px; display:inline-block}
+  footer{
+    max-width:1120px; margin:0 auto;
+    padding:18px clamp(16px,4vw,40px) 32px;
+    display:flex; flex-wrap:wrap; align-items:center; gap:8px 18px;
+    font-size:.76rem; color:var(--muted);
+  }
+  footer .upd{display:inline-flex; align-items:center; gap:6px; font-variant-numeric:tabular-nums}
+  footer svg{width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
+
+  @media (max-width:560px){
+    .hero{border-radius:0 0 22px 22px; padding-bottom:22px}
+    .brand-badge{width:47px; height:47px; border-radius:14px}
+    .brand-badge svg{width:25px; height:25px}
+    .hero-actions{width:100%; justify-content:space-between}
+    .btn-refresh{flex:1}
+    main{grid-template-columns:1fr}
+    .card{padding:18px 18px 16px}
+    .next-time{margin-left:0; width:100%; text-align:left; padding-bottom:0; margin-top:2px}
+    .next-time strong{display:inline; margin-left:6px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important}
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>Next B3A</h1>
-  <p>Citybus · Lingnan ⇄ Shenzhen Bay Port · 城巴 B3A</p>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="brand">
+      <div class="brand-badge" aria-hidden="true">
+        <!-- bus icon -->
+        <svg viewBox="0 0 24 24"><path d="M6 17V7.4c0-1 .8-1.9 1.9-1.9h8.2c1.1 0 1.9.9 1.9 1.9V17"/><path d="M4 17h16M6 17v2M18 17v2"/><path d="M6.5 8.5h11v5h-11z"/><path d="M8 20.5v.5M16 20.5v.5"/><circle cx="8.5" cy="14.6" r=".6" fill="#fff" stroke="none"/><circle cx="15.5" cy="14.6" r=".6" fill="#fff" stroke="none"/></svg>
+      </div>
+      <div>
+        <h1>Next B3A <span class="pill">城巴 Citybus</span></h1>
+        <p class="route-meta">嶺南大學 ⇄ 深圳灣口岸 · Lingnan ⇄ Shenzhen Bay Port</p>
+      </div>
+    </div>
+    <div class="hero-actions">
+      <span class="live"><span class="dot" aria-hidden="true"></span>即時 Real-time</span>
+      <button class="btn-refresh" id="refresh" type="button" aria-label="重新整理班次 Refresh arrivals">
+        <!-- refresh icon -->
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v4h-4"/></svg>
+        <span>重新整理 Refresh</span>
+      </button>
+    </div>
+  </div>
 </header>
+
 <main>
-  <section>
-    <h2>To Shenzhen Bay Port · 往深圳灣口岸</h2>
-    <p class="stop">From Fu Tai Estate, Castle Peak Road · 富泰邨</p>
-    <div id="out">Loading…</div>
+  <section class="card" data-dir="O" aria-labelledby="h-out">
+    <div class="card-head">
+      <div class="dir-icon" aria-hidden="true">
+        <!-- direction: outbound arrow -->
+        <svg viewBox="0 0 24 24"><path d="M5 19 19 5"/><path d="M11 5h8v8"/></svg>
+      </div>
+      <div>
+        <h2 id="h-out">往深圳灣口岸<span class="en">To Shenzhen Bay Port</span></h2>
+        <p class="stop">
+          <!-- location pin -->
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          富泰邨 · Fu Tai Estate
+        </p>
+      </div>
+    </div>
+    <div class="board" id="out" role="status" aria-live="polite">
+      <div class="skel" aria-hidden="true"><span></span><span></span><span></span></div>
+    </div>
   </section>
-  <section>
-    <h2>To Tuen Mun · 往屯門山景邨</h2>
-    <p class="stop">From Shenzhen Bay Port · 深圳灣口岸</p>
-    <div id="in">Loading…</div>
+
+  <section class="card" data-dir="I" aria-labelledby="h-in">
+    <div class="card-head">
+      <div class="dir-icon" aria-hidden="true">
+        <!-- direction: inbound arrow -->
+        <svg viewBox="0 0 24 24"><path d="M19 5 5 19"/><path d="M13 19H5v-8"/></svg>
+      </div>
+      <div>
+        <h2 id="h-in">往屯門山景邨<span class="en">To Tuen Mun</span></h2>
+        <p class="stop">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          深圳灣口岸 · Shenzhen Bay Port
+        </p>
+      </div>
+    </div>
+    <div class="board" id="in" role="status" aria-live="polite">
+      <div class="skel" aria-hidden="true"><span></span><span></span><span></span></div>
+    </div>
   </section>
 </main>
-<footer>Data: Citybus real-time ETA, DATA.GOV.HK · updated <span id="updated">–</span> · refreshes every 30 s</footer>
-<script>
-  // Stop IDs come from /route-stop/CTB/B3A/outbound and /stop/{id}:
-  // 003261 = Fu Tai Estate (outbound, last stop before the port)
-  // 003208 = Shenzhen Bay Port (inbound, first stop)
-  const API = "https://rt.data.gov.hk/v2/transport/citybus/eta/CTB/";
-  const BOARDS = [["out", "003261", "O"], ["in", "003208", "I"]];
 
-  async function load(boxId, stop, dir) {
-    const box = document.getElementById(boxId);
+<div class="legend" aria-hidden="true">
+  <span><i style="background:#12b76a"></i>即將到站 · Arriving</span>
+  <span><i style="background:#e5484d"></i>1–4 分鐘 · Urgent</span>
+  <span><i style="background:#f79009"></i>5–12 分鐘 · Soon</span>
+  <span><i style="background:#1570ef"></i>13 分鐘以上 · Later</span>
+</div>
+
+<footer>
+  <span class="upd">
+    <!-- clock icon -->
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></svg>
+    更新於 Updated <span id="updated">–</span>
+  </span>
+  <span>資料來源 Data: 城巴 Citybus · DATA.GOV.HK</span>
+  <span>每 30 秒自動更新 · Refreshes every 30 s</span>
+</footer>
+
+<script>
+  // Citybus real-time ETA endpoint. Stop IDs from
+  // /route-stop/CTB/B3A/outbound and /stop/{id}:
+  //   003261 = Fu Tai Estate (outbound)
+  //   003208 = Shenzhen Bay Port (inbound)
+  const API = "https://rt.data.gov.hk/v2/transport/citybus/eta/CTB/";
+  const BOARDS = [
+    { id: "out", stop: "003261", dir: "O" },
+    { id: "in",  stop: "003208", dir: "I" }
+  ];
+
+  const HKT = "Asia/Hong_Kong";
+  const esc = s => String(s).replace(/[&<>"']/g,
+    c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  const clockText = d => d.toLocaleTimeString("en-GB",
+    { hour: "2-digit", minute: "2-digit", timeZone: HKT });
+
+  const ICON_ERROR =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5"/><path d="M12 16.5h.01"/>' +
+    '<path d="M10.3 3.9 2.6 17.2A1.6 1.6 0 0 0 4 19.6h16a1.6 1.6 0 0 0 1.4-2.4L13.7 3.9a1.9 1.9 0 0 0-3.4 0Z"/></svg>';
+  const ICON_EMPTY =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="14" rx="3"/>' +
+    '<path d="M4 11h16"/><path d="M8 18v2M16 18v2"/><path d="M8.5 7.5h.01M15.5 7.5h.01"/></svg>';
+
+  // Colour tier by waiting time.
+  function tone(min) {
+    if (min <= 0) return "arriving";
+    if (min <= 4) return "urgent";
+    if (min <= 12) return "soon";
+    return "ok";
+  }
+
+  const minutesUntil = iso => Math.max(0, Math.round((new Date(iso) - Date.now()) / 60000));
+
+  function render(box, list) {
+    if (list.length === 0) {
+      box.innerHTML = '<div class="state">' + ICON_EMPTY +
+        '<span class="lines">未來一小時沒有班次<small>No buses in the next hour</small></span></div>';
+      return;
+    }
+
+    const [next, ...later] = list;
+    const min = minutesUntil(next.eta);
+    const t = tone(min);
+
+    const big = min === 0
+      ? '<span class="next-num is-text tone-arriving">即將到站</span>' +
+        '<span class="next-unit">Arriving</span>'
+      : '<span class="next-num tone-' + t + '">' + min + '</span>' +
+        '<span class="next-unit">分鐘 min</span>';
+
+    const time = '<div class="next-time">預計 Estimated<strong>' +
+      clockText(new Date(next.eta)) + '</strong></div>';
+
+    const rows = later.slice(0, 4).map(b => {
+      const m = minutesUntil(b.eta);
+      const rmk = b.rmk_en ? '<span class="rmk">' + esc(b.rmk_en) + '</span>' : "";
+      return '<li><span class="tag tone-' + tone(m) + '">' +
+        (m === 0 ? "即將到站" : m + " 分鐘") + '</span>' + rmk +
+        '<span class="at">' + clockText(new Date(b.eta)) + '</span></li>';
+    }).join("");
+
+    box.innerHTML =
+      '<div class="next-label">下一班 · Next bus</div>' +
+      '<div class="next">' + big + time + '</div>' +
+      (rows
+        ? '<ul class="later">' + rows + '</ul>'
+        : '<p class="later-empty">暫無更多班次 · No further buses</p>');
+  }
+
+  async function load(board) {
+    const box = document.getElementById(board.id);
     try {
-      const res = await fetch(API + stop + "/B3A");
-      const data = (await res.json()).data.filter(b => b.dir === dir && b.eta);
-      if (data.length === 0) {
-        box.innerHTML = '<div class="none">No bus in the next hour · 暫時沒有班次</div>';
-        return;
-      }
-      box.innerHTML = data.map(b => {
-        const t = new Date(b.eta);
-        const min = Math.max(0, Math.round((t - Date.now()) / 60000));
-        const clock = t.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit",
-                                                      timeZone: "Asia/Hong_Kong" });
-        const note = b.rmk_en ? " · " + b.rmk_en : "";
-        return `<div class="bus"><span class="min">${min === 0 ? "Arriving" : min + " min"}</span>` +
-               `<span class="clock">${clock}${note}</span></div>`;
-      }).join("");
+      const res = await fetch(API + board.stop + "/B3A", { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const json = await res.json();
+      const data = (json.data || [])
+        .filter(b => b.dir === board.dir && b.eta)
+        .sort((a, b) => new Date(a.eta) - new Date(b.eta));
+      render(box, data);
     } catch (e) {
-      box.innerHTML = '<div class="none">Cannot reach the data. Check the Wi-Fi.</div>';
+      box.innerHTML = '<div class="state is-error">' + ICON_ERROR +
+        '<span class="lines">無法連接數據，請檢查網絡<small>Cannot reach the data. Check the Wi-Fi.</small></span></div>';
     }
   }
 
   function refresh() {
-    BOARDS.forEach(b => load(...b));
-    document.getElementById("updated").textContent =
-      new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Hong_Kong" });
+    const btn = document.getElementById("refresh");
+    btn.classList.add("busy");
+    btn.disabled = true;
+    Promise.all(BOARDS.map(load)).finally(() => {
+      btn.classList.remove("busy");
+      btn.disabled = false;
+      document.getElementById("updated").textContent =
+        new Date().toLocaleTimeString("en-GB", { timeZone: HKT });
+    });
   }
+
+  document.getElementById("refresh").addEventListener("click", refresh);
   refresh();
-  setInterval(refresh, 30000);
+  setInterval(refresh, 30000);   // auto-refresh every 30 s
 </script>
 </body>
 </html>
